@@ -1,0 +1,94 @@
+service: aws
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  stage: production
+  region: us-east-1
+  environment:
+    # DEBUG: "*"
+    PAGE_LOAD_TIMEOUT: 20000
+    LOGGING: true
+    BUCKET_NAME: ${self:custom.bucket_name}
+    ENDPOINT: https://d13650fkzz2y2j.cloudfront.net/
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:ListBucket"
+        - "s3:Put*"
+        - "s3:GetObject"
+      Resource:
+        - "arn:aws:s3:::${self:custom.bucket_name}"
+        - "arn:aws:s3:::${self:custom.bucket_name}/*"
+
+plugins:
+  - serverless-plugin-chrome
+  - serverless-webpack
+  - serverless-add-api-key
+
+custom:
+  chrome:
+    flags:
+      - --window-size=1280,1696 # Letter size
+      - --hide-scrollbars
+  apiKeys:
+    - integrationsKey
+  bucket_name: encharge-site-screenshot-${self:provider.stage}
+
+functions:
+  # version-info:
+  #   description: Headless Chrome Serverless-framework version info example
+  #   memorySize: 1024
+  #   timeout: 30
+  #   handler: src/handlers/version.default
+  #   events:
+  #     - http:
+  #         path: version-info
+  #         method: get
+
+  # request-logger:
+  #   description: Headless Chrome Serverless-framework request logging example
+  #   memorySize: 1024
+  #   timeout: 30
+  #   handler: src/handlers/requestLogger.default
+  #   events:
+  #     - http:
+  #         path: request-logger
+  #         method: get
+
+  screenshot:
+    description: Headless Chrome Serverless-framework screenshot example
+    memorySize: 1536
+    timeout: 30
+    handler: src/handlers/screenshot.default
+    events:
+      - http:
+          path: screenshot
+          method: get
+
+  # pdf:
+  #   description: Headless Chrome Serverless-framework PDF example
+  #   memorySize: 1536
+  #   timeout: 30
+  #   handler: src/handlers/pdf.default
+  #   events:
+  #     - http:
+  #         path: pdf
+  #         method: get
+
+resources:
+  Resources:
+    ApiGatewayRestApi:
+      Properties:
+        BinaryMediaTypes:
+          - "*/*"
+    # Enable X-Ray tracing on Lambda functions
+    # ScreenshotLambdaFunction:
+    #   Properties:
+    #     TracingConfig:
+    #       Mode: Active
+    # PdfLambdaFunction:
+    #   Properties:
+    #     TracingConfig:
+    #       Mode: Active
