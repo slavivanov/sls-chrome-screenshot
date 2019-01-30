@@ -26,9 +26,38 @@ export default async function captureScreenshotOfUrl (url, mobile = false) {
     log('Chrome is sending request for:', params.request.url)
   })
 
+  var requestCounterMinWaitMs = 1000; // Wait for at least 1 second
+  var requestCounterMaxWaitMs = LOAD_TIMEOUT;
+
+  var numSent = 0;
+  var numReceived = 0;
+  var startTime = new Date().getTime();
+
+  function minWaitTimeExceeded() {
+    return new Date().getTime() - startTime > requestCounterMinWaitMs;
+  }
+
+  function maxWaitTimeExceeded() {
+    return new Date().getTime() - startTime > requestCounterMaxWaitMs;
+  }
+
   Page.loadEventFired(() => {
-    loaded = true
-  })
+    var ajaxDoneInterval = setInterval(function() {
+      if (numSent == numReceived && minWaitTimeExceeded()) {
+        clearInterval(ajaxDoneInterval);
+      } else if (maxWaitTimeExceeded()) {
+        console.log('Timed out. Waited ' + (new Date().getTime() - startTime) + ' ms. Had been still waiting for ' + (numSent - numReceived) + ' ajax requests');
+        clearInterval(ajaxDoneInterval);
+      } else {
+        if (numSent == numReceived) {
+          console.log('No pending ajax requests, but still waiting for minWaitTime of ' + requestCounterMinWaitMs + '. Current wait: ' + (new Date().getTime() - startTime));
+        } else {
+          console.log('Still waiting for ' + (numSent - numReceived) + ' ajax requests');
+        }
+      }
+    }, 300);
+  }
+)
 
   try {
     await Promise.all([Network.enable(), Page.enable()])
