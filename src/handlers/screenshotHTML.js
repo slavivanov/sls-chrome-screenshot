@@ -1,38 +1,40 @@
 import log from "../utils/log";
-import screenshot from "../chrome/screenshot";
+import screenshotHTML from "../chrome/screenshotHTML";
 const crypto = require("crypto");
 const AWS = require("aws-sdk");
 
 export default async function handler(event, context, callback) {
   const queryStringParameters = event.queryStringParameters || {};
-  const {
-    url = "https://github.com/adieuadieu/serverless-chrome",
-    mobile = false
-  } = queryStringParameters;
-
+  const { mobile = false } = queryStringParameters;
+  if (event.isBase64Encoded) {
+    event.body = Buffer.from(event.body, "base64").toString();
+  }
+  let body = JSON.parse(event.body);
+  const html = body.html;
+  console.log(html);
   let data;
 
-  log("Processing screenshot capture for", url);
+  log("Processing screenshot capture for HTML");
 
   const startTime = Date.now();
 
   try {
-    data = await screenshot(url, mobile);
+    data = await screenshotHTML(html, mobile);
   } catch (error) {
-    console.error("Error capturing screenshot for", url, error);
+    console.error("Error capturing HTML screenshot", error);
     return callback(error);
   }
 
   log(
     `Chromium took ${Date.now() -
-      startTime}ms to load URL and capture screenshot.`
+      startTime}ms to load HTML and capture screenshot.`
   );
 
   // Save the image to S3
   const targetBucket = process.env.BUCKET_NAME;
   const targetHash = crypto
     .createHash("md5")
-    .update(url)
+    .update(html)
     .digest("hex");
   const targetFilename = `${targetHash}/original.png`;
 
@@ -51,7 +53,7 @@ export default async function handler(event, context, callback) {
       ContentType: "image/png",
       ContentEncoding: "base64"
     },
-    err => {
+    (err, res) => {
       if (err) {
         console.warn(err);
         callback(err);

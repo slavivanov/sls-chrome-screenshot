@@ -1,4 +1,4 @@
-service: aws
+service: screenshot
 
 provider:
   name: aws
@@ -8,9 +8,17 @@ provider:
   environment:
     # DEBUG: "*"
     PAGE_LOAD_TIMEOUT: 20000
+    AFTER_PAGE_LOAD_MIN_TIMEOUT: 3000
+    VIEWPORT_WIDTH: 1280
+    VIEWPORT_HEIGHT: 800
+    MOBILE_VIEWPORT_WIDTH: 375
+    MOBILE_VIEWPORT_HEIGHT: 667
     LOGGING: true
     BUCKET_NAME: ${self:custom.bucket_name}
     ENDPOINT: https://d13650fkzz2y2j.cloudfront.net/
+    HTML_LOAD_TIMEOUT: 5000
+    EMAIL_VIEWPORT_WIDTH: 600
+    EMAIL_VIEWPORT_HEIGHT: 800
 
   iamRoleStatements:
     - Effect: "Allow"
@@ -58,7 +66,7 @@ functions:
   #         method: get
 
   screenshot:
-    description: Headless Chrome Serverless-framework screenshot example
+    description: Generate a screenshot from a given URL
     memorySize: 1536
     timeout: 30
     handler: src/handlers/screenshot.default
@@ -67,6 +75,15 @@ functions:
           path: screenshot
           method: get
 
+  screenshotHTML:
+    description: Headless Chrome Serverless-framework screenshot example
+    memorySize: 1536
+    timeout: 30
+    handler: src/handlers/screenshotHTML.default
+    events:
+      - http:
+          path: screenshotHTML
+          method: post
   # pdf:
   #   description: Headless Chrome Serverless-framework PDF example
   #   memorySize: 1536
@@ -76,19 +93,18 @@ functions:
   #     - http:
   #         path: pdf
   #         method: get
-
-resources:
-  Resources:
-    ApiGatewayRestApi:
-      Properties:
-        BinaryMediaTypes:
-          - "*/*"
-    # Enable X-Ray tracing on Lambda functions
-    # ScreenshotLambdaFunction:
-    #   Properties:
-    #     TracingConfig:
-    #       Mode: Active
-    # PdfLambdaFunction:
-    #   Properties:
-    #     TracingConfig:
-    #       Mode: Active
+# resources:
+#   Resources:
+#     ApiGatewayRestApi:
+#       Properties:
+#         BinaryMediaTypes:
+#           - "*/*"
+# Enable X-Ray tracing on Lambda functions
+# ScreenshotLambdaFunction:
+#   Properties:
+#     TracingConfig:
+#       Mode: Active
+# PdfLambdaFunction:
+#   Properties:
+#     TracingConfig:
+#       Mode: Active
