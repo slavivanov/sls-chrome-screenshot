@@ -3,7 +3,7 @@ const log = require("../utils/log");
 const sleep = require("../utils/sleep");
 
 let viewport = [
-  Number(process.env.EMAIL_VIEWPORT_WIDTH) || 600,
+  Number(process.env.EMAIL_VIEWPORT_WIDTH) || 601,
   Number(process.env.EMAIL_VIEWPORT_HEIGHT) || 800
 ];
 const LOAD_TIMEOUT = Number(process.env.HTML_LOAD_TIMEOUT) || 1000 * 5;

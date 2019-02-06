@@ -17,7 +17,7 @@ provider:
     BUCKET_NAME: ${self:custom.bucket_name}
     ENDPOINT: https://d13650fkzz2y2j.cloudfront.net/
     HTML_LOAD_TIMEOUT: 5000
-    EMAIL_VIEWPORT_WIDTH: 600
+    EMAIL_VIEWPORT_WIDTH: 601
     EMAIL_VIEWPORT_HEIGHT: 800
 
   iamRoleStatements:

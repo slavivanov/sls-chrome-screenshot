@@ -163,8 +163,8 @@ module.exports = captureScreenshotOfUrl;
 // For local debugging:
 //
 // Run in bash:
-// google-chrome --headless --hide-scrollbars --remote-debugging-port=9222 --disable-gpu & echo $!
 // alias google-chrome="/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
+// google-chrome --headless --hide-scrollbars --remote-debugging-port=9222 --disable-gpu & echo $!
 //
 // And uncomment:
 // const fs = require("fs");
