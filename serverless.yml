@@ -15,7 +15,7 @@ provider:
     MOBILE_VIEWPORT_HEIGHT: 667
     LOGGING: true
     BUCKET_NAME: ${self:custom.bucket_name}
-    ENDPOINT: https://d13650fkzz2y2j.cloudfront.net/
+    ENDPOINT: https://screenshots.encharge.io/
     HTML_LOAD_TIMEOUT: 5000
     EMAIL_VIEWPORT_WIDTH: 601
     EMAIL_VIEWPORT_HEIGHT: 800
@@ -42,7 +42,7 @@ custom:
       - --hide-scrollbars
   apiKeys:
     - integrationsKey
-  bucket_name: encharge-site-screenshot-${self:provider.stage}
+  bucket_name: encharge-screenshot-${self:provider.stage}
 
 functions:
   # version-info:
