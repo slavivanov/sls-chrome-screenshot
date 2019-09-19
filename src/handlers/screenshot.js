@@ -5,10 +5,14 @@ const AWS = require("aws-sdk");
 
 export default async function handler(event, context, callback) {
   const queryStringParameters = event.queryStringParameters || {};
-  const {
-    url = "https://github.com/adieuadieu/serverless-chrome",
-    mobile = false
-  } = queryStringParameters;
+  const { url, mobile = false } = queryStringParameters;
+
+  if (!url) {
+    ({ url, mobile = false } = event.body);
+  }
+  if (!url) {
+    throw new Error("Please provide url to screenshot.");
+  }
 
   let data;
 
@@ -20,7 +24,7 @@ export default async function handler(event, context, callback) {
     data = await screenshot(url, mobile);
   } catch (error) {
     console.error("Error capturing screenshot for", url, error);
-    return callback(error);
+    throw error;
   }
 
   log(
@@ -42,37 +46,37 @@ export default async function handler(event, context, callback) {
   );
 
   const s3 = new AWS.S3();
-  s3.putObject(
-    {
-      ACL: "public-read",
-      Key: targetFilename,
-      Body: buf,
-      Bucket: targetBucket,
-      ContentType: "image/png",
-      ContentEncoding: "base64"
-    },
-    err => {
-      if (err) {
-        console.warn(err);
-        callback(err);
-      } else {
-        callback(null, {
-          statusCode: 200,
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            hash: targetHash,
-            key: `${targetFilename}`,
-            bucket: targetBucket,
-            url: `${process.env.ENDPOINT}${targetFilename}`
-          })
-        });
+  return new Promise((resolve, reject) => {
+    s3.putObject(
+      {
+        ACL: "public-read",
+        Key: targetFilename,
+        Body: buf,
+        Bucket: targetBucket,
+        ContentType: "image/png",
+        ContentEncoding: "base64"
+      },
+      err => {
+        if (err) {
+          console.warn(err);
+          reject(err);
+        } else {
+          resolve(null, {
+            statusCode: 200,
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              hash: targetHash,
+              key: `${targetFilename}`,
+              bucket: targetBucket,
+              url: `${process.env.ENDPOINT}${targetFilename}`
+            })
+          });
+        }
       }
-      return;
-    }
-  );
-
+    );
+  });
   // return callback(null, {
   //   statusCode: 200,
   //   body: data,

@@ -9,7 +9,8 @@ export default async function handler(event, context, callback) {
   if (event.isBase64Encoded) {
     event.body = Buffer.from(event.body, "base64").toString();
   }
-  let body = JSON.parse(event.body);
+  let body =
+    typeof event.body === "string" ? JSON.parse(event.body) : event.body;
   const html = body.html;
   console.log(html);
   let data;
@@ -22,7 +23,7 @@ export default async function handler(event, context, callback) {
     data = await screenshotHTML(html, mobile);
   } catch (error) {
     console.error("Error capturing HTML screenshot", error);
-    return callback(error);
+    throw error;
   }
 
   log(
@@ -37,6 +38,7 @@ export default async function handler(event, context, callback) {
     .update(html)
     .digest("hex");
   const targetFilename = `${targetHash}/original.png`;
+  console.log(targetFilename);
 
   const buf = new Buffer(
     data.replace(/^data:image\/\w+;base64,/, ""),
@@ -44,36 +46,44 @@ export default async function handler(event, context, callback) {
   );
 
   const s3 = new AWS.S3();
-  s3.putObject(
-    {
-      ACL: "public-read",
-      Key: targetFilename,
-      Body: buf,
-      Bucket: targetBucket,
-      ContentType: "image/png",
-      ContentEncoding: "base64"
-    },
-    (err, res) => {
-      if (err) {
-        console.warn(err);
-        callback(err);
-      } else {
-        callback(null, {
-          statusCode: 200,
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
+  return new Promise((resolve, reject) => {
+    s3.putObject(
+      {
+        ACL: "public-read",
+        Key: targetFilename,
+        Body: buf,
+        Bucket: targetBucket,
+        ContentType: "image/png",
+        ContentEncoding: "base64"
+      },
+      (err, res) => {
+        if (err) {
+          console.warn(err);
+          reject(err);
+        } else {
+          const result = {
             hash: targetHash,
             key: `${targetFilename}`,
             bucket: targetBucket,
             url: `${process.env.ENDPOINT}${targetFilename}`
-          })
-        });
+          };
+          console.log(result);
+          resolve(null, {
+            statusCode: 200,
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              hash: targetHash,
+              key: `${targetFilename}`,
+              bucket: targetBucket,
+              url: `${process.env.ENDPOINT}${targetFilename}`
+            })
+          });
+        }
       }
-      return;
-    }
-  );
+    );
+  });
 
   // return callback(null, {
   //   statusCode: 200,
