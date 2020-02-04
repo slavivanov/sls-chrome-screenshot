@@ -4,11 +4,16 @@ const crypto = require("crypto");
 const AWS = require("aws-sdk");
 
 export default async function handler(event, context, callback) {
-  const queryStringParameters = event.queryStringParameters || {};
-  const { url, mobile = false } = queryStringParameters;
+  console.log(event);
+  const queryStringParameters = (event && event.queryStringParameters) || {};
+  let { url, mobile = false } = queryStringParameters;
 
   if (!url) {
-    ({ url, mobile = false } = event.body);
+    let body = event && event.body;
+    ({ url, mobile = false } = body || {});
+  }
+  if (!url && event.url) {
+    ({ url, mobile = false } = event || {});
   }
   if (!url) {
     throw new Error("Please provide url to screenshot.");
