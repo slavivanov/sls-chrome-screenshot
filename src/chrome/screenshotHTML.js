@@ -1,4 +1,5 @@
-const Cdp = require("chrome-remote-interface");
+const { getCDP } = require('./setup');
+const Cdp = getCDP();
 const log = require("../utils/log");
 const sleep = require("../utils/sleep");
 

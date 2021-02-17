@@ -1,4 +1,5 @@
-const Cdp = require("chrome-remote-interface");
+const { getCDP } = require('./setup');
+const Cdp = getCDP();
 const log = require("../utils/log");
 const sleep = require("../utils/sleep");
 
@@ -28,9 +29,9 @@ async function captureScreenshotOfUrl(url, mobile = false) {
     }
   };
 
-  const [tab] = await Cdp.List();
-  const client = await Cdp({ host: "127.0.0.1", target: tab });
-
+  // const [tab] = await Cdp.List();
+  // const client = await Cdp({ host: "127.0.0.1", target: tab });
+  client = Cdp;
   const { Network, Page, Runtime, Emulation, DOM } = client;
 
   // Track the number of requests
@@ -49,7 +50,7 @@ async function captureScreenshotOfUrl(url, mobile = false) {
     }
 
     // Check if all ajax requests are done
-    var ajaxDoneInterval = setInterval(function() {
+    var ajaxDoneInterval = setInterval(function () {
       log("Sent and recived requests", numSent, numReceived);
       if (numSent == numReceived && minWaitTimeExceeded()) {
         log("No pending requests and min wait time was exceeded");
@@ -58,10 +59,10 @@ async function captureScreenshotOfUrl(url, mobile = false) {
       } else if (maxWaitTimeExceeded()) {
         log(
           "Timed out. Waited " +
-            (new Date().getTime() - startTime) +
-            " ms. Had been still waiting for " +
-            (numSent - numReceived) +
-            " ajax requests"
+          (new Date().getTime() - startTime) +
+          " ms. Had been still waiting for " +
+          (numSent - numReceived) +
+          " ajax requests"
         );
         clearInterval(ajaxDoneInterval);
         loaded = true;
@@ -69,9 +70,9 @@ async function captureScreenshotOfUrl(url, mobile = false) {
         if (numSent == numReceived) {
           log(
             "No pending ajax requests, but still waiting for minWaitTime of " +
-              requestCounterMinWaitMs +
-              ". Current wait: " +
-              (new Date().getTime() - startTime)
+            requestCounterMinWaitMs +
+            ". Current wait: " +
+            (new Date().getTime() - startTime)
           );
         } else {
           log(

@@ -2,9 +2,9 @@ service: screenshot
 
 provider:
   name: aws
-  runtime: nodejs8.10
+  runtime: nodejs12.x
   stage: production
-  region: us-east-1
+  region: eu-west-1
   environment:
     # DEBUG: "*"
     PAGE_LOAD_TIMEOUT: 20000
@@ -31,7 +31,6 @@ provider:
         - "arn:aws:s3:::${self:custom.bucket_name}/*"
 
 plugins:
-  - serverless-plugin-chrome
   - serverless-webpack
   - serverless-add-api-key
 
@@ -42,7 +41,7 @@ custom:
       - --hide-scrollbars
   apiKeys:
     - integrationsKey
-  bucket_name: encharge-screenshot-${self:provider.stage}
+  bucket_name: encharge-screenshots-${self:provider.stage}
 
 functions:
   # version-info:

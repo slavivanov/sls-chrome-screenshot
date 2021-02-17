@@ -45,8 +45,10 @@
   "homepage": "https://github.com/adieuadieu/serverless-chrome/tree/master/examples/serverless-framework/aws",
   "dependencies": {
     "child_process": "^1.0.2",
+    "chrome-aws-lambda": "^3.1.1",
     "chrome-remote-interface": "0.25.3",
     "crypto": "^1.0.1",
+    "puppeteer-core": "^5.2.1",
     "valid-url": "^1.0.9"
   },
   "devDependencies": {
@@ -60,9 +62,9 @@
     "babel-register": "6.26.0",
     "serverless": "1.24.1",
     "serverless-add-api-key": "^2.1.2",
-    "serverless-plugin-chrome": "1.0.0-55",
     "serverless-webpack": "4.0.0",
-    "webpack": "3.8.1"
+    "webpack": "^4.43.0",
+    "copy-webpack-plugin": "^6.0.3"
   },
   "ava": {
     "require": "babel-register",
