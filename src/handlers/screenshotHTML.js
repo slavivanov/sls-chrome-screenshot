@@ -1,96 +1,68 @@
-import log from "../utils/log";
-import screenshotHTML from "../chrome/screenshotHTML";
 const crypto = require("crypto");
 const AWS = require("aws-sdk");
+const chromium = require("chrome-aws-lambda");
 
-export default async function handler(event, context, callback) {
-  const queryStringParameters = event.queryStringParameters || {};
-  const { mobile = false } = queryStringParameters;
+const handler = async (event, context) => {
   if (event.isBase64Encoded) {
     event.body = Buffer.from(event.body, "base64").toString();
   }
-  let body =
-    typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+
+  let body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
   const html = body.html;
   console.log(html);
-  let data;
-
-  log("Processing screenshot capture for HTML");
-
-  const startTime = Date.now();
+  let browser = null;
 
   try {
-    data = await screenshotHTML(html, mobile);
+    await chromium.font('https://rawcdn.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf');
+    await chromium.font('https://rawcdn.githack.com/googlefonts/noto-fonts/8194fd72cbc46bb88e8246b68e42b96cbef0c700/hinted/ttf/NotoSans/NotoSans-Regular.ttf');
+    await chromium.font('https://rawcdn.githack.com/googlefonts/noto-fonts/8194fd72cbc46bb88e8246b68e42b96cbef0c700/hinted/ttf/NotoSans/NotoSans-Bold.ttf');
+    browser = await chromium.puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath,
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true
+    });
+    // await fs.copy('./fonts/*.ttf', '/tmp/aws/.fonts/');
+
+    let page = await browser.newPage();
+    await page.setContent(html, {
+      waitUntil: "networkidle2"
+    });
+    await page.addStyleTag({
+      content: `
+    * {
+      font-family: 'Noto Sans', sans-serif !important;
+    }`
+    }); // await page.waitForNavigation({
+    //   waitUntil: 'networkidle2',
+    // });
+
+    const bodyHeight = await page.evaluate(() => document.body.scrollHeight);
+    await page.setViewport({
+      width: viewport[0],
+      height: bodyHeight,
+      deviceScaleFactor: 0
+    });
+    const imageBuffer = await page.screenshot({
+      type: "png",
+      fullPage: true
+    });
+    const result = await saveToS3(imageBuffer, html);
+    return result;
   } catch (error) {
-    console.error("Error capturing HTML screenshot", error);
-    throw error;
+    return {
+      statusCode: 400,
+      body: JSON.stringify(error)
+    };
+  } finally {
+    if (browser !== null) {
+      await browser.close();
+    }
   }
+};
 
-  log(
-    `Chromium took ${Date.now() -
-      startTime}ms to load HTML and capture screenshot.`
-  );
 
-  // Save the image to S3
-  const targetBucket = process.env.BUCKET_NAME;
-  const targetHash = crypto
-    .createHash("md5")
-    .update(html)
-    .digest("hex");
-  const targetFilename = `${targetHash}/original.png`;
-  console.log(targetFilename);
-
-  const buf = new Buffer(
-    data.replace(/^data:image\/\w+;base64,/, ""),
-    "base64"
-  );
-
-  const s3 = new AWS.S3();
-  return new Promise((resolve, reject) => {
-    s3.putObject(
-      {
-        ACL: "public-read",
-        Key: targetFilename,
-        Body: buf,
-        Bucket: targetBucket,
-        ContentType: "image/png",
-        ContentEncoding: "base64"
-      },
-      (err, res) => {
-        if (err) {
-          console.warn(err);
-          reject(err);
-        } else {
-          const result = {
-            hash: targetHash,
-            key: `${targetFilename}`,
-            bucket: targetBucket,
-            url: `${process.env.ENDPOINT}${targetFilename}`
-          };
-          console.log(result);
-          resolve(null, {
-            statusCode: 200,
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              hash: targetHash,
-              key: `${targetFilename}`,
-              bucket: targetBucket,
-              url: `${process.env.ENDPOINT}${targetFilename}`
-            })
-          });
-        }
-      }
-    );
-  });
-
-  // return callback(null, {
-  //   statusCode: 200,
-  //   body: data,
-  //   isBase64Encoded: true,
-  //   headers: {
-  //     'Content-Type': 'image/png',
-  //   },
-  // })
-}
+module.exports = {
+  handler
+};

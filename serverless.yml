@@ -3,8 +3,9 @@ service: screenshot
 provider:
   name: aws
   runtime: nodejs12.x
-  stage: production
+  stage: ${opt:stage, 'production'}
   region: eu-west-1
+  memorySize: 2048
   environment:
     # DEBUG: "*"
     PAGE_LOAD_TIMEOUT: 20000
@@ -16,6 +17,7 @@ provider:
     LOGGING: true
     BUCKET_NAME: ${self:custom.bucket_name}
     ENDPOINT: https://screenshots.encharge.io/
+    # ENDPOINT: https://app-encharge-screenshots-staging.s3.eu-west-1.amazonaws.com/
     HTML_LOAD_TIMEOUT: 5000
     EMAIL_VIEWPORT_WIDTH: 601
     EMAIL_VIEWPORT_HEIGHT: 800
@@ -33,6 +35,7 @@ provider:
 plugins:
   - serverless-webpack
   - serverless-add-api-key
+  - serverless-prune-plugin
 
 custom:
   chrome:
@@ -42,7 +45,13 @@ custom:
   apiKeys:
     - integrationsKey
   bucket_name: encharge-screenshots-${self:provider.stage}
-
+  webpack:
+    webpackConfig: "webpack.config.js" # Name of webpack configuration file
+    includeModules: true # Node modules configuration for packaging
+    packager: "npm" # Packager that will be used to package your external modules
+  prune:
+    automatic: true
+    number: 3
 functions:
   # version-info:
   #   description: Headless Chrome Serverless-framework version info example
@@ -78,7 +87,7 @@ functions:
     description: Headless Chrome Serverless-framework screenshot example
     memorySize: 1536
     timeout: 30
-    handler: src/handlers/screenshotHTML.default
+    handler: src/handlers/screenshotHTML.handler
     events:
       - http:
           path: screenshotHTML
